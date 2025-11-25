@@ -6,11 +6,12 @@ import domain.Transaction;
 import domain.Type;
 import exceptions.AccountNotFoundException;
 import exceptions.InsufficientFundsException;
-import exceptions.InvalidAmountException;
+import exceptions.ValidationException;
 import repository.AccountRepository;
 import repository.CustomerRepository;
 import repository.TransactionRepository;
 import service.BankService;
+import uitl.Validation;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -24,8 +25,32 @@ public class BankServiceImpl implements BankService {
     private final TransactionRepository transactionRepository = new TransactionRepository();
     private final CustomerRepository customerRepository = new CustomerRepository();
 
+
+    private final Validation<String> validateName = name -> {
+        if (name == null || name.isBlank()) throw new ValidationException("Name is required");
+    };
+
+    private final Validation<String> validateEmail = email -> {
+        if (email == null || !email.contains("@")) throw new ValidationException("Email is required");
+    };
+
+    private final Validation<String> validateType = type -> {
+        if (type == null || !(type.equalsIgnoreCase("SAVINGS") || type.contains("CURRENT")))
+            throw new ValidationException("Type must be SAVINGS or CURRENT");
+    };
+
+    private final Validation<Double> validateAmountPositive = amount -> {
+        if (amount == null || amount < 0)
+            throw new ValidationException("Please enter valid amount");
+    };
+
     @Override
     public String openAccount(String name, String email, String accountType) {
+        validateName.validate(name);
+        validateEmail.validate(email);
+        validateType.validate(accountType);
+
+
         String customerId = UUID.randomUUID().toString();
 
         // CREATE Customer
@@ -60,12 +85,17 @@ public class BankServiceImpl implements BankService {
     public void deposit(String accountNumber, Double amount, String note) {
         Account account = accountRepository.findByNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found : " + accountNumber));
-        if (amount > 0) {
+        /*        if (amount > 0) {
             account.setBalance(account.getBalance() + amount);
             System.out.println("Deposit Done !");
         } else {
             throw new InvalidAmountException("Invalid amount");
-        }
+        }*/
+        validateAmountPositive.validate(amount);
+        account.setBalance(account.getBalance() + amount);
+        System.out.println("Deposit Done !");
+
+
         Transaction transaction = new Transaction(
                 account.getAccountNumber(),
                 amount,
@@ -83,13 +113,15 @@ public class BankServiceImpl implements BankService {
                 .orElseThrow(() -> new AccountNotFoundException("Account not found : " + accountNumber));
         if (account.getBalance().compareTo(amount) < 0)
             throw new InsufficientFundsException("Insufficient Balance");
-        if (amount > 0) {
+/*        if (amount > 0) {
             account.setBalance(account.getBalance() - amount);
             System.out.println("Withdraw Done !");
         } else {
             throw new InvalidAmountException("Invalid amount");
-        }
-
+        }*/
+        validateAmountPositive.validate(amount);
+        account.setBalance(account.getBalance() - amount);
+        System.out.println("Withdraw Done !");
 
         Transaction transaction = new Transaction(
                 account.getAccountNumber(),
@@ -113,7 +145,13 @@ public class BankServiceImpl implements BankService {
                 .orElseThrow(() -> new AccountNotFoundException("Account not found : " + toAccount));
         if (fromAcc.getBalance().compareTo(amount) < 0)
             throw new InsufficientFundsException("Insufficient Balance");
-
+/*        if (amount > 0) {
+            account.setBalance(account.getBalance() - amount);
+            System.out.println("Withdraw Done !");
+        } else {
+            throw new InvalidAmountException("Invalid amount");
+        }*/
+        validateAmountPositive.validate(amount);
         fromAcc.setBalance(fromAcc.getBalance() - amount);
         toAcc.setBalance(toAcc.getBalance() + amount);
 
