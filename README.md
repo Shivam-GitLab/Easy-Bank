@@ -1,1 +1,1 @@
-Easy Bank
+Easy Bank App
