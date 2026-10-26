@@ -1,4 +1,4 @@
-# 🏦 EasyBank
+# 🏦 Easy Bank
 
 > A Core Java 21 banking application built from scratch using JDBC and PostgreSQL, designed to demonstrate modern Java features from Java 8 through Java 21 and all five GoF Creational Design Patterns.
 
